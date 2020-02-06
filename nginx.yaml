@@ -1,0 +1,15 @@
+serverName: localhost
+locations:
+  - url: http://testservice:8080
+    location: /api/v[0-9]+/test
+    prefix: ~*
+  - url: http://testservice2:9090
+    location: /api/v[0-9]+/test2
+    prefix: "~"
+proxy_set_header_default: true
+proxy_set_header:
+  Host: $host
+  X-Real-IP: $remote_addr
+server_section:
+  proxy_read_timeout: 5m
+  proxy_redirect: "off"
