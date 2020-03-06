@@ -1,0 +1,80 @@
+serverName: _
+locations:
+  - url: http://imageservice
+    location: /api/v1/image/recognition/
+    prefix: ^~
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+  - url: http://imageservice
+    location: /api/v1/image/callback/
+    prefix: ^~
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+  - url: http://imageservice
+    location: /api/v1/image/create
+    prefix: ^~
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+    free:
+      client_max_body_size: 1G
+  - url: http://imageservice
+    location: /api/v1/image/model
+    prefix: ^~
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+  - url: http://imageservice
+    location: /api/v1/image/menu
+    prefix: ^~
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+  - url: http://openidservice
+    location: /api/openid/googlesignon
+    prefix: ^~
+  - url: http://openidservice
+    location: /api/auth/googlesignon
+    prefix: ^~
+  - url: http://menuservice
+    location: /api/v[0-9]+/menu
+    prefix: ~*
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+  - url: http://userservice
+    location: /api/v[0-9]+/user
+    prefix: ~*
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+  - url: http://userservice
+    location: /api/v[0-9]+/user
+    prefix: ~*
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+  - url: http://authservice
+    location: /api/v[0-9]+/oauth/
+    prefix: ~*
+  - url: http://authservice
+    location: /api/v[0-9]+/auth/
+    prefix: ~*
+  - url: http://chatservice
+    location: /api/v1/chat/create
+    prefix: ^~
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+  - url: http://chatservice
+    location: /api/v1/chat/vocab/
+    prefix: ^~
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+  - url: http://chatservice
+    location: /api/v1/chat/menu
+    prefix: ^~
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+  - url: http://chatservice
+    location: /api/v1/chat/callback
+    prefix: ^~
+    auth: 1
+    authurl: /api/v1/auth/is_apikey;
+proxy_set_header_default: true
+server_section:
+  proxy_read_timeout: 5m
+  proxy_redirect: "off"

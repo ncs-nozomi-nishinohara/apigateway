@@ -11,23 +11,26 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type Setting struct {
-	Url      string `yaml:"url"`
-	Prefix   string `yaml:"prefix"`
-	Resolver string `yaml:"resolver"`
-	Location string `yaml:"location"`
+type setting struct {
+	URL         string            `yaml:"url"`
+	Prefix      string            `yaml:"prefix"`
+	Resolver    string            `yaml:"resolver"`
+	Location    string            `yaml:"location"`
+	Auth        int               `yaml:"auth"`
+	AuthURL     string            `yaml:"authurl"`
+	Free        map[string]string `yaml:"free"`
+	AuthService int               `yaml:"auth_service"`
 }
 
-func (s *Setting) GetResolver() string {
+func (s *setting) GetResolver() string {
 	if s.Resolver == "-" {
 		return ""
-	} else {
-		return "resolver " + s.Resolver
 	}
+	return "resolver " + s.Resolver
 }
 
-type YamlSetting struct {
-	Setting               []*Setting        `yaml:"locations"`
+type yamlSetting struct {
+	Setting               []*setting        `yaml:"locations"`
 	ServerName            string            `yaml:"serverName"`
 	ProxySetHeader        map[string]string `yaml:"proxy_set_header"`
 	ProxySetHeaderDefault bool              `yaml:"proxy_set_header_default"`
@@ -35,27 +38,8 @@ type YamlSetting struct {
 }
 
 var (
-	nginxConf = `server {
-  listen 80;
-  server_name {{ .ServerName }};
-  access_log /dev/stdout;
-  error_log /dev/stderr warn;
-  server_tokens off;
-  {{range $key, $value := .ProxySetHeader -}}
-  proxy_set_header {{$key}} {{$value}};
-  {{end}}
-  {{range $key, $value := .ServerSection -}}
-  {{$key}} {{$value}};
-  {{end -}}
-{{range $index, $setting := .Setting}}
-  location {{$setting.Prefix}} {{$setting.Location}} {
-    {{$setting.GetResolver}};
-    proxy_pass {{$setting.Url}};
-  }
-{{end}}
-}
-`
-	proxy_set_header_default = map[string]string{
+	nginxConf             = ""
+	proxySetHeaderDefault = map[string]string{
 		"Host":              "$host",
 		"X-Real-IP":         "$remote_addr",
 		"X-Forwarded-Proto": "$http_x_forwarded_proto",
@@ -63,10 +47,10 @@ var (
 	}
 )
 
-func getenv(key string, default_ string) string {
+func getenv(key string, defValue string) string {
 	value := os.Getenv(key)
 	if value == "" {
-		return default_
+		return defValue
 	}
 	return value
 }
@@ -105,7 +89,7 @@ func merge(values ...map[string]string) map[string]string {
 
 func logic(writer io.Writer) bool {
 	var filename = os.Getenv("SETTING_FILE_NAME")
-	var yamlSetting YamlSetting
+	var yamlsetting yamlSetting
 	var buf []byte
 	var err error
 
@@ -117,24 +101,26 @@ func logic(writer io.Writer) bool {
 		log.Printf("File Read Error : %s\n", filename)
 		return false
 	}
-	if err = yaml.Unmarshal(buf, &yamlSetting); err != nil {
+	if err = yaml.Unmarshal(buf, &yamlsetting); err != nil {
 		log.Printf("File to Yaml Error: %s\n", filename)
 		return false
 	}
-	if yamlSetting.ServerName == "" {
-		yamlSetting.ServerName = "_"
+	if yamlsetting.ServerName == "" {
+		yamlsetting.ServerName = "_"
 	}
-	for _, setting := range yamlSetting.Setting {
+	for _, setting := range yamlsetting.Setting {
 		if setting.Resolver == "" {
 			setting.Resolver = "kube-dns.kube-system valid=2s"
 		}
 	}
 
-	if yamlSetting.ProxySetHeaderDefault {
-		yamlSetting.ProxySetHeader = merge(proxy_set_header_default, yamlSetting.ProxySetHeader)
+	if yamlsetting.ProxySetHeaderDefault {
+		yamlsetting.ProxySetHeader = merge(proxySetHeaderDefault, yamlsetting.ProxySetHeader)
 	}
-	tpl := template.Must(template.New("nginxconf").Parse(nginxConf))
-	if err = tpl.Execute(writer, yamlSetting); err != nil {
+	// tpl := template.Must(template.New("nginxconf").Parse(nginxConf))
+	var configTpl = getenv("CONFIG_DIR", "/app/templates/nginxConf.conf")
+	tpl := template.Must(template.ParseFiles(configTpl))
+	if err = tpl.Execute(writer, yamlsetting); err != nil {
 		panic(err)
 	}
 

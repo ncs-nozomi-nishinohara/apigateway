@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-if [ -e "/app/config.yaml" ]; then
+if [ -e "/app/config/config.yaml" ]; then
     /app/app
 fi
 
